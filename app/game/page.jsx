@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { logout } from "../service/auth.service";
+import { getCurrentUser, logout } from "../service/auth.service";
 
 const WIN_PATTERNS = [
     [0, 1, 2],
@@ -18,11 +18,21 @@ const WIN_PATTERNS = [
 function Page() {
     const router = useRouter();
     const [isShowBoard, setIsShowBoard] = useState(false);
+    const [username, setUsername] = useState("");
 
     const handleLogout = async () => {
         await logout();
         router.push("/login");
     };
+
+    useEffect(() => {
+        const onGetCurrentUser = async () => {
+            const { data: currentUserData, error: userError } = await getCurrentUser();
+            if (userError) return;
+            setUsername(currentUserData?.user.user_metadata.username);
+        };
+        onGetCurrentUser();
+    }, []);
 
     // bot Tic-tac-toe
     const [board, setBoard] = useState(Array(9).fill(null));
@@ -111,7 +121,8 @@ function Page() {
     return (
         <div className="w-full h-dvh flex items-center justify-center relative">
             <div>
-                <div className="absolute top-8 right-8 flex gap-8">
+                <div className="absolute top-8 right-8 flex items-center gap-8">
+                    <h2>สวัสดีผู้เล่น {username}</h2>
                     <button type="button" onClick={() => setIsShowBoard(!isShowBoard)}>
                         ตรวจสอบคะแนน
                     </button>
@@ -129,35 +140,26 @@ function Page() {
                 <div className="h-80 w-80 border flex items-center justify-center">
                     <div
                         style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            fontFamily: "sans-serif",
+                            display: "grid",
+                            gridTemplateColumns: "repeat(3, 80px)",
+                            gap: 5,
                         }}
                     >
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(3,80px)",
-                                gap: 5,
-                            }}
-                        >
-                            {board.map((cell, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => handleClick(index)}
-                                    style={{
-                                        width: 80,
-                                        height: 80,
-                                        fontSize: 32,
-                                        cursor: "pointer",
-                                        border: "1px solid",
-                                    }}
-                                >
-                                    {cell}
-                                </button>
-                            ))}
-                        </div>
+                        {board.map((cell, index) => (
+                            <button
+                                key={index}
+                                onClick={() => handleClick(index)}
+                                style={{
+                                    width: 80,
+                                    height: 80,
+                                    fontSize: 32,
+                                    cursor: "pointer",
+                                    border: "1px solid",
+                                }}
+                            >
+                                {cell}
+                            </button>
+                        ))}
                     </div>
                 </div>
                 <div className="flex justify-center mt-4">
