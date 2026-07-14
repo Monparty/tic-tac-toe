@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { updateSession } from "./app/lib/supabase/middleware";
 import { createServerClient } from "@supabase/ssr";
 
-export async function middleware(request) {
+export async function proxy(request) {
     // refresh cookie
     const response = await updateSession(request);
 

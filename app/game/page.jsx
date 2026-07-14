@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, logout } from "../service/auth.service";
+import { upsertGame, upsertUserScores } from "../service/games.service";
 
 const WIN_PATTERNS = [
     [0, 1, 2],
@@ -19,6 +20,7 @@ function Page() {
     const router = useRouter();
     const [isShowBoard, setIsShowBoard] = useState(false);
     const [username, setUsername] = useState("");
+    const [userId, setUserId] = useState("");
 
     const handleLogout = async () => {
         await logout();
@@ -30,6 +32,7 @@ function Page() {
             const { data: currentUserData, error: userError } = await getCurrentUser();
             if (userError) return;
             setUsername(currentUserData?.user.user_metadata.username);
+            setUserId(currentUserData?.user.id);
         };
         onGetCurrentUser();
     }, []);
@@ -37,6 +40,14 @@ function Page() {
     // bot Tic-tac-toe
     const [board, setBoard] = useState(Array(9).fill(null));
     const [winner, setWinner] = useState(null);
+    const [playerScore, setPlayerScore] = useState(0);
+    const [botScore, setBotScore] = useState(0);
+    // เช็คชนะต่อเนื่อ 3 ครั้ง
+    const [winStreak, setWinStreak] = useState(0);
+    // ตัวเก็บคะแนน
+    const [winCount, setWinCount] = useState(0);
+    const [loseCount, setLoseCount] = useState(0);
+    const [drawCount, setDrawCount] = useState(0);
 
     function checkWinner(currentBoard) {
         for (const pattern of WIN_PATTERNS) {
@@ -112,6 +123,68 @@ function Page() {
         }
     }, [board]);
 
+    // เงื่อนไขการนับคะแนน & เมื่อเส่นจบเกมยิง api เก็บข้อมูล
+    useEffect(() => {
+        if (!winner) return;
+
+        if (winner === "X") {
+            const newStreak = winStreak + 1;
+            if (newStreak === 3) {
+                setPlayerScore(playerScore + 2); // 1 คะแนนปกติ + 1 โบนัส
+                setWinStreak(0); // ครบ 3 แล้ว นับใหม่
+                setWinCount(winCount + 1);
+            } else {
+                setPlayerScore(playerScore + 1);
+                setWinStreak(newStreak);
+            }
+        }
+
+        if (winner === "O") {
+            setPlayerScore(playerScore - 1);
+            setBotScore(botScore + 1);
+            setWinStreak(0); // แพ้ = สตรีคขาด
+            setLoseCount(loseCount + 1);
+        }
+        if (winner === "Draw") {
+            setDrawCount(drawCount + 1);
+        }
+
+        const onUpsertGame = async () => {
+            try {
+                const payload = {
+                    user_id: userId,
+                    result: winner === "X" ? "WIN" : winner === "O" ? "LOSE" : "DRAW",
+                    score_change: playerScore,
+                };
+
+                const { error: gameError } = await upsertGame(payload);
+                if (gameError) return alert(gameError?.message);
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+        onUpsertGame();
+
+        const onUpsertUserScores = async () => {
+            try {
+                const payload = {
+                    user_id: userId,
+                    score: playerScore,
+                    win_count: winCount,
+                    lose_count: loseCount,
+                    draw_count: drawCount,
+                    win_streak: winStreak,
+                };
+
+                const { error: userScoresError } = await upsertUserScores(payload);
+                if (userScoresError) return alert(userScoresError?.message);
+            } catch (error) {
+                alert(error.message);
+            }
+        };
+        onUpsertUserScores();
+    }, [winner]);
+
     function resetGame() {
         setBoard(Array(9).fill(null));
         setWinner(null);
@@ -131,11 +204,20 @@ function Page() {
                     </button>
                 </div>
                 <div className="border flex justify-between mb-4">
-                    <div>ผู้เล่น: 0</div>
-                    <div>บอท: 0</div>
+                    <div>ผู้เล่น: {playerScore}</div>
+                    <div>บอท: {botScore}</div>
                 </div>
                 <div className="border flex justify-center mb-4">
-                    <h2>{winner ? (winner === "Draw" ? "เสมอ" : `${winner} ชนะ`) : "คุณคือ X"}</h2>
+                    <h2>
+                        {winner
+                            ? winner === "Draw"
+                                ? "เสมอ"
+                                : `${winner === "X" ? "ผู้เล่น" : "บอท"} ชนะ`
+                            : "คุณคือ X"}
+                    </h2>
+                </div>
+                <div className="border flex justify-center mb-4">
+                    <div>ชนะติดต่อกัน: {winStreak}/3</div>
                 </div>
                 <div className="h-80 w-80 border flex items-center justify-center">
                     <div
