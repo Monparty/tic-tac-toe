@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, logout } from "../service/auth.service";
-import { upsertGame, upsertUserScores } from "../service/games.service";
+import { insertGame, upsertUserScores } from "../service/games.service";
 
 const WIN_PATTERNS = [
     [0, 1, 2],
@@ -116,64 +116,68 @@ function Page() {
         }
     }, [board]);
 
-    useEffect(() => {
-        const result = checkWinner(board);
-        if (result) {
-            setWinner(result);
-        }
-    }, [board]);
-
     // เงื่อนไขการนับคะแนน & เมื่อเส่นจบเกมยิง api เก็บข้อมูล
     useEffect(() => {
         if (!winner) return;
 
+        // คำนวณค่าใหม่ก่อน แล้วใช้ชุดเดียวกันทั้งกับ state และ payload
+        let scoreChange = 0;
+        let newStreak = winStreak;
+        let newWinCount = winCount;
+        let newLoseCount = loseCount;
+        let newDrawCount = drawCount;
+
         if (winner === "X") {
-            const newStreak = winStreak + 1;
-            if (newStreak === 3) {
-                setPlayerScore(playerScore + 2); // 1 คะแนนปกติ + 1 โบนัส
-                setWinStreak(0); // ครบ 3 แล้ว นับใหม่
-                setWinCount(winCount + 1);
-            } else {
-                setPlayerScore(playerScore + 1);
-                setWinStreak(newStreak);
-            }
+            newStreak = winStreak + 1;
+            scoreChange = newStreak === 3 ? 2 : 1; // 1 คะแนนปกติ + 1 โบนัสเมื่อชนะครบ 3 ครั้งติด
+            if (newStreak === 3) newStreak = 0; // ครบ 3 แล้ว นับใหม่
+            newWinCount = winCount + 1;
         }
 
         if (winner === "O") {
-            setPlayerScore(playerScore - 1);
+            scoreChange = -1;
+            newStreak = 0; // แพ้ = สตรีคขาด
+            newLoseCount = loseCount + 1;
             setBotScore(botScore + 1);
-            setWinStreak(0); // แพ้ = สตรีคขาด
-            setLoseCount(loseCount + 1);
-        }
-        if (winner === "Draw") {
-            setDrawCount(drawCount + 1);
         }
 
-        const onUpsertGame = async () => {
+        if (winner === "Draw") {
+            newDrawCount = drawCount + 1;
+        }
+
+        const newScore = playerScore + scoreChange;
+
+        setPlayerScore(newScore);
+        setWinStreak(newStreak);
+        setWinCount(newWinCount);
+        setLoseCount(newLoseCount);
+        setDrawCount(newDrawCount);
+
+        const onInsertGame = async () => {
             try {
                 const payload = {
                     user_id: userId,
                     result: winner === "X" ? "WIN" : winner === "O" ? "LOSE" : "DRAW",
-                    score_change: playerScore,
+                    score_change: scoreChange,
                 };
 
-                const { error: gameError } = await upsertGame(payload);
+                const { error: gameError } = await insertGame(payload);
                 if (gameError) return alert(gameError?.message);
             } catch (error) {
                 alert(error.message);
             }
         };
-        onUpsertGame();
+        onInsertGame();
 
         const onUpsertUserScores = async () => {
             try {
                 const payload = {
                     user_id: userId,
-                    score: playerScore,
-                    win_count: winCount,
-                    lose_count: loseCount,
-                    draw_count: drawCount,
-                    win_streak: winStreak,
+                    score: newScore,
+                    win_count: newWinCount,
+                    lose_count: newLoseCount,
+                    draw_count: newDrawCount,
+                    win_streak: newStreak,
                 };
 
                 const { error: userScoresError } = await upsertUserScores(payload);
@@ -183,6 +187,8 @@ function Page() {
             }
         };
         onUpsertUserScores();
+        // จงใจให้ effect ทำงานเฉพาะตอนจบเกม (winner เปลี่ยน) ถ้าใส่ state คะแนนใน deps จะถูกนับซ้ำ
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [winner]);
 
     function resetGame() {
