@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, logout } from "../service/auth.service";
-import { getUserScores, insertGame, upsertUserScores } from "../service/games.service";
+import { getUserScores, getUserScoreByUserId, insertGame, upsertUserScores } from "../service/games.service";
 
 const WIN_PATTERNS = [
     [0, 1, 2],
@@ -187,14 +187,21 @@ function Page() {
 
         const onUpsertUserScores = async () => {
             try {
+                const { data: oldScoreData, error: oldScoreError } = await getUserScoreByUserId(userId);
+                if (oldScoreError) return alert(oldScoreError?.message);
+
                 const payload = {
                     user_id: userId,
-                    score: newScore,
                     win_count: newWinCount,
                     lose_count: newLoseCount,
                     draw_count: newDrawCount,
                     win_streak: newStreak,
                 };
+
+                // เก็บคะแนนสูงสุดไว้: ส่ง field score เฉพาะแถวใหม่ หรือคะแนนใหม่มากกว่าคะแนนเก่า
+                if (!oldScoreData || newScore > oldScoreData.score) {
+                    payload.score = newScore;
+                }
 
                 const { error: userScoresError } = await upsertUserScores(payload);
                 if (userScoresError) return alert(userScoresError?.message);
@@ -202,9 +209,8 @@ function Page() {
                 alert(error.message);
             }
         };
-        onUpsertUserScores();
-
-        onGetUserScores();
+        // รอ upsert เสร็จก่อนแล้วค่อยดึง userScores ออกมา
+        onUpsertUserScores().then(() => onGetUserScores());
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [winner]);
 
