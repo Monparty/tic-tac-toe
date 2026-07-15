@@ -211,6 +211,9 @@ function Page() {
         };
         // รอ upsert เสร็จก่อนแล้วค่อยดึง userScores ออกมา
         onUpsertUserScores().then(() => onGetUserScores());
+        setTimeout(() => {
+            resetGame();
+        }, 1500);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [winner]);
 
@@ -271,13 +274,15 @@ function Page() {
             </div>
             <div className="w-full h-full">
                 <div className="flex flex-col items-end pb-4 lg:p-8">
-                    <div className="flex flex-wrap items-center py-4 gap-4 lg:py-0 lg:gap-8 lg:mb-8">
-                        <h2>สวัสดีผู้เล่น {username}</h2>
-                        <button type="button" onClick={() => setIsShowBoard(!isShowBoard)}>
+                    <div className="flex flex-wrap items-center justify-end py-4 gap-4 lg:py-0 lg:gap-8 lg:mb-8">
+                        <h2 className="w-full lg:w-fit text-end">
+                            สวัสดีผู้เล่น <span className="underline">{username}</span>
+                        </h2>
+                        <button type="button" onClick={() => setIsShowBoard(!isShowBoard)} className="bg-yellow-500!">
                             ตรวจสอบคะแนน
                         </button>
-                        <button type="button" onClick={handleLogout}>
-                            ออกจากระบบ
+                        <button type="button" onClick={handleLogout} className="bg-red-500! text-white flex">
+                            ออก<span className="hidden lg:block">จากระบบ</span>
                         </button>
                     </div>
                     {isShowBoard && (
