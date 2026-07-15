@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, logout } from "../service/auth.service";
-import { insertGame, upsertUserScores } from "../service/games.service";
+import { getUserScores, insertGame, upsertUserScores } from "../service/games.service";
 
 const WIN_PATTERNS = [
     [0, 1, 2],
@@ -21,20 +21,36 @@ function Page() {
     const [isShowBoard, setIsShowBoard] = useState(false);
     const [username, setUsername] = useState("");
     const [userId, setUserId] = useState("");
+    const [userScores, setUserScores] = useState([]);
 
     const handleLogout = async () => {
         await logout();
         router.push("/login");
     };
 
+    const onGetUserScores = async () => {
+        try {
+            const { data: userScoresData, error: userScoresError } = await getUserScores();
+            if (userScoresError) return;
+            setUserScores(userScoresData);
+        } catch (error) {
+            alert(error.message);
+        }
+    };
+
     useEffect(() => {
         const onGetCurrentUser = async () => {
-            const { data: currentUserData, error: userError } = await getCurrentUser();
-            if (userError) return;
-            setUsername(currentUserData?.user.user_metadata.username);
-            setUserId(currentUserData?.user.id);
+            try {
+                const { data: currentUserData, error: userError } = await getCurrentUser();
+                if (userError) return;
+                setUsername(currentUserData?.user.user_metadata.username);
+                setUserId(currentUserData?.user.id);
+            } catch (error) {
+                alert(error.message);
+            }
         };
         onGetCurrentUser();
+        onGetUserScores();
     }, []);
 
     // bot Tic-tac-toe
@@ -187,7 +203,8 @@ function Page() {
             }
         };
         onUpsertUserScores();
-        // จงใจให้ effect ทำงานเฉพาะตอนจบเกม (winner เปลี่ยน) ถ้าใส่ state คะแนนใน deps จะถูกนับซ้ำ
+
+        onGetUserScores();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [winner]);
 
@@ -210,8 +227,8 @@ function Page() {
                     </button>
                 </div>
                 <div className="border flex justify-between mb-4">
-                    <div>ผู้เล่น: {playerScore}</div>
-                    <div>บอท: {botScore}</div>
+                    <div>คะแนนผู้เล่น: {playerScore}</div>
+                    <div>คะแนนบอท: {botScore}</div>
                 </div>
                 <div className="border flex justify-center mb-4">
                     <h2>
@@ -258,18 +275,36 @@ function Page() {
                         <div className="border w-80 p-4">
                             <h2 className="mb-2">คะแนนของผู้เล่นทั้งหมด</h2>
                             <div className="grid gap-2">
-                                <div className="border p-2 flex justify-between">
-                                    <div>1. ชื่อผู้เล่น</div>
-                                    <div>10 คะแนน</div>
-                                </div>
-                                <div className="border p-2 flex justify-between">
-                                    <div>1. ชื่อผู้เล่น</div>
-                                    <div>10 คะแนน</div>
-                                </div>
-                                <div className="border p-2 flex justify-between">
-                                    <div>1. ชื่อผู้เล่น</div>
-                                    <div>10 คะแนน</div>
-                                </div>
+                                {userScores?.map((item, index) => (
+                                    <div key={item.user_id} className="border p-2">
+                                        <div
+                                            className={`flex justify-between mb-2 ${userId === item.user_id ? "bg-yellow-200" : ""}`}
+                                        >
+                                            <div>
+                                                {index + 1}. {item?.profiles?.username || ""}
+                                            </div>
+                                            <div>{item?.score || 0} คะแนนสูงสุด</div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm">
+                                            <div className="border p-2 text-center">
+                                                <div>ชนะ</div>
+                                                <div>{item.win_count}</div>
+                                            </div>
+                                            <div className="border p-2 text-center">
+                                                <div>แพ้</div>
+                                                <div>{item.lose_count}</div>
+                                            </div>
+                                            <div className="border p-2 text-center">
+                                                <div>เสมอ</div>
+                                                <div>{item.draw_count}</div>
+                                            </div>
+                                            <div className="border p-2 text-center">
+                                                <div>ชนะต่อเนื่อง</div>
+                                                <div>{item.win_streak}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </dialog>
