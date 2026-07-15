@@ -282,16 +282,21 @@ function Page() {
                             <h2 className="mb-2">คะแนนของผู้เล่นทั้งหมด</h2>
                             <div className="grid gap-2">
                                 {userScores?.map((item, index) => (
-                                    <div key={item.user_id} className="border p-2">
-                                        <div
-                                            className={`flex justify-between mb-2 ${userId === item.user_id ? "bg-yellow-200" : ""}`}
+                                    <details key={item.user_id} className="border p-2">
+                                        <summary
+                                            className={`flex justify-between ${userId === item.user_id ? "bg-yellow-200" : ""}`}
                                         >
                                             <div>
                                                 {index + 1}. {item?.profiles?.username || ""}
                                             </div>
-                                            <div>{item?.score || 0} คะแนนสูงสุด</div>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm">
+                                            <div className="flex items-center gap-2">
+                                                <div>{item?.score || 0} คะแนนสูงสุด</div>
+                                                <div className="flex justify-center items-center h-4 w-4 bg-blue-500 rounded-full text-white cursor-pointer">
+                                                    +
+                                                </div>
+                                            </div>
+                                        </summary>
+                                        <div className="flex justify-between items-center text-sm pt-2">
                                             <div className="border p-2 text-center">
                                                 <div>ชนะ</div>
                                                 <div>{item.win_count}</div>
@@ -309,7 +314,7 @@ function Page() {
                                                 <div>{item.win_streak}</div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </details>
                                 ))}
                             </div>
                         </div>
