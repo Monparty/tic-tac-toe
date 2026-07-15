@@ -19,7 +19,7 @@ function Page() {
 
     return (
         <div className="w-full h-dvh flex items-center justify-center">
-            <div className="h-80 w-80 border flex items-center justify-center">
+            <div className="h-100 w-70 border flex items-center justify-center">
                 <form className="flex flex-col gap-6 items-center" onSubmit={handleSubmit(handleRegister)}>
                     <h1>สร้าง user ใหม่</h1>
                     <InputText control={control} name="username" placeholder="ชื่อผู้เล่น" />

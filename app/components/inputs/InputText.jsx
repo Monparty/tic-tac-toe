@@ -6,7 +6,7 @@ function InputText({ control, name, type = "text", placeholder }) {
         <Controller
             name={name}
             control={control}
-            render={({ field }) => <input {...field} type={type} placeholder={placeholder} />}
+            render={({ field }) => <input {...field} type={type} placeholder={placeholder} required />}
         />
     );
 }

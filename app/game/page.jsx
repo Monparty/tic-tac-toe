@@ -221,22 +221,14 @@ function Page() {
     // bot Tic-tac-toe
 
     return (
-        <div className="w-full h-dvh flex items-center justify-center relative">
-            <div>
-                <div className="absolute top-8 right-8 flex items-center gap-8">
-                    <h2>สวัสดีผู้เล่น {username}</h2>
-                    <button type="button" onClick={() => setIsShowBoard(!isShowBoard)}>
-                        ตรวจสอบคะแนน
-                    </button>
-                    <button type="button" onClick={handleLogout}>
-                        ออกจากระบบ
-                    </button>
-                </div>
-                <div className="border flex justify-between mb-4">
+        <div className="w-full h-full lg:h-dvh flex flex-col-reverse lg:flex-row p-4">
+            <div className="w-full h-full hidden lg:block"></div>
+            <div className="w-full h-fit grid items-center lg:justify-center lg:p-8 gap-4">
+                <div className="border flex justify-between gap-10 p-2">
                     <div>คะแนนผู้เล่น: {playerScore}</div>
                     <div>คะแนนบอท: {botScore}</div>
                 </div>
-                <div className="border flex justify-center mb-4">
+                <div className="border flex justify-center p-2">
                     <h2>
                         {winner
                             ? winner === "Draw"
@@ -245,10 +237,10 @@ function Page() {
                             : "คุณคือ X"}
                     </h2>
                 </div>
-                <div className="border flex justify-center mb-4">
+                <div className="border flex justify-center p-2">
                     <div>ชนะติดต่อกัน: {winStreak}/3</div>
                 </div>
-                <div className="h-80 w-80 border flex items-center justify-center">
+                <div className="h-80 w-full lg:w-80 border flex items-center justify-center">
                     <div
                         style={{
                             display: "grid",
@@ -273,18 +265,29 @@ function Page() {
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-center mt-4">
+                <div className="flex justify-center">
                     <button onClick={resetGame}>เล่นใหม่</button>
                 </div>
-                <div className="absolute top-30 right-90 flex gap-8">
-                    <dialog open={isShowBoard}>
-                        <div className="border w-80 p-4">
+            </div>
+            <div className="w-full h-full">
+                <div className="flex flex-col items-end pb-4 lg:p-8">
+                    <div className="flex flex-wrap items-center py-4 gap-4 lg:py-0 lg:gap-8 lg:mb-8">
+                        <h2>สวัสดีผู้เล่น {username}</h2>
+                        <button type="button" onClick={() => setIsShowBoard(!isShowBoard)}>
+                            ตรวจสอบคะแนน
+                        </button>
+                        <button type="button" onClick={handleLogout}>
+                            ออกจากระบบ
+                        </button>
+                    </div>
+                    {isShowBoard && (
+                        <div className="w-full lg:w-100 p-4 border">
                             <h2 className="mb-2">คะแนนของผู้เล่นทั้งหมด</h2>
                             <div className="grid gap-2">
                                 {userScores?.map((item, index) => (
-                                    <details key={item.user_id} className="border p-2">
+                                    <details key={item.user_id} className="border p-2 bg-white">
                                         <summary
-                                            className={`flex justify-between ${userId === item.user_id ? "bg-yellow-200" : ""}`}
+                                            className={`flex justify-between ${userId === item.user_id ? "bg-green-200" : ""}`}
                                         >
                                             <div>
                                                 {index + 1}. {item?.profiles?.username || ""}
@@ -296,20 +299,20 @@ function Page() {
                                                 </div>
                                             </div>
                                         </summary>
-                                        <div className="flex justify-between items-center text-sm pt-2">
-                                            <div className="border p-2 text-center">
+                                        <div className="flex justify-between items-center text-sm pt-2 gap-2">
+                                            <div className="border p-2 w-full text-center flex-1">
                                                 <div>ชนะ</div>
                                                 <div>{item.win_count}</div>
                                             </div>
-                                            <div className="border p-2 text-center">
+                                            <div className="border p-2 w-full text-center flex-1">
                                                 <div>แพ้</div>
                                                 <div>{item.lose_count}</div>
                                             </div>
-                                            <div className="border p-2 text-center">
+                                            <div className="border p-2 w-full text-center flex-1">
                                                 <div>เสมอ</div>
                                                 <div>{item.draw_count}</div>
                                             </div>
-                                            <div className="border p-2 text-center">
+                                            <div className="border p-2 w-full text-center flex-2">
                                                 <div>ชนะต่อเนื่อง</div>
                                                 <div>{item.win_streak}</div>
                                             </div>
@@ -318,7 +321,7 @@ function Page() {
                                 ))}
                             </div>
                         </div>
-                    </dialog>
+                    )}
                 </div>
             </div>
         </div>
